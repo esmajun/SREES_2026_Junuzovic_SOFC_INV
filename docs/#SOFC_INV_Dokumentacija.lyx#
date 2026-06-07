@@ -1,0 +1,356 @@
+#LyX 2.5 created this file. For more info see https://www.lyx.org/
+\lyxformat 643
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children no
+\language bosnian
+\language_package default
+\inputencoding utf8
+\fontencoding auto
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_roman_osf false
+\font_sans_osf false
+\font_typewriter_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\float_placement class
+\float_alignment class
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification default
+\crossref_package refstyle
+\use_formatted_ref 0
+\use_minted 0
+\use_lineno 0
+\backgroundcolor none
+\fontcolor none
+\notefontcolor lightgray
+\boxbgcolor red
+\table_border_color default
+\table_odd_row_color default
+\table_even_row_color default
+\table_alt_row_colors_start 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tablestyle default
+\tracking_changes false
+\output_changes false
+\change_bars false
+\postpone_fragile_content true
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\docbook_table_output 0
+\docbook_mathml_prefix 1
+\docbook_mathml_version 0
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Solid Oxide Fuel Cell i Invertor - Dinamički Konvertor
+\end_layout
+
+\begin_layout Author
+Esma Junuzović
+\end_layout
+
+\begin_layout Section
+Uvod
+\end_layout
+
+\begin_layout Standard
+Solid Oxide Fuel Cell (SOFC) je elektrokemijski uređaj koji
+\end_layout
+
+\begin_layout Standard
+direktno pretvara hemijsku energiju goriva u električnu energiju.
+\end_layout
+
+\begin_layout Standard
+SOFC radi na visokim temperaturama (600-1000°C) i postiže
+\end_layout
+
+\begin_layout Standard
+efikasnost od 50-65%.
+ U kombinaciji sa invertorom,
+ SOFC sistem
+\end_layout
+
+\begin_layout Standard
+može napajati izmjeničnu mrežu.
+ Ovaj projekat implementira
+\end_layout
+
+\begin_layout Standard
+dinamički model SOFC + invertor sistema za IEEE testne mreže.
+\end_layout
+
+\begin_layout Section
+Matematički model
+\end_layout
+
+\begin_layout Subsection
+Nernst napon
+\end_layout
+
+\begin_layout Standard
+Reversibilni napon SOFC opisan je Nernst jednadžbom:
+\end_layout
+
+\begin_layout Standard
+V_Nernst = E0 + (RT/2F) * ln(pH2 * sqrt(pO2) / pH2O)
+\end_layout
+
+\begin_layout Standard
+gdje je:
+\end_layout
+
+\begin_layout Standard
+- E0 = 1.229 V (standardni reversibilni napon)
+\end_layout
+
+\begin_layout Standard
+- R = 8.314 J/mol/K (univerzalna plinska konstanta)
+\end_layout
+
+\begin_layout Standard
+- T = radna temperatura [K]
+\end_layout
+
+\begin_layout Standard
+- F = 96485 C/mol (Faradayeva konstanta)
+\end_layout
+
+\begin_layout Standard
+- pH2,
+ pO2,
+ pH2O = parcijalni pritisci [atm]
+\end_layout
+
+\begin_layout Subsection
+Gubici napona
+\end_layout
+
+\begin_layout Standard
+Ukupni napon ćelije:
+\end_layout
+
+\begin_layout Standard
+V_cell = V_Nernst - V_ohm - V_act
+\end_layout
+
+\begin_layout Standard
+gdje je:
+\end_layout
+
+\begin_layout Standard
+- V_ohm = I * Rint (ohmski gubitak)
+\end_layout
+
+\begin_layout Standard
+- V_act = 0.1 * ln(1 + I/0.01) (aktivacijski gubitak)
+\end_layout
+
+\begin_layout Subsection
+Invertor
+\end_layout
+
+\begin_layout Standard
+AC snaga nakon invertora:
+\end_layout
+
+\begin_layout Standard
+P_ac = eta * P_sofc
+\end_layout
+
+\begin_layout Standard
+gdje je eta efikasnost invertora (tipično 0.96).
+\end_layout
+
+\begin_layout Section
+Implementacija
+\end_layout
+
+\begin_layout Standard
+Plugin je implementiran u C++ kao DLL biblioteka koja se 
+\end_layout
+
+\begin_layout Standard
+učitava u dTwin aplikaciju.
+ Sastoji se od:
+\end_layout
+
+\begin_layout Standard
+- SOFCPlugin.cpp:
+ glavni kod sa SOFC modelom i konverzijom
+\end_layout
+
+\begin_layout Standard
+- ViewConv.h:
+ GUI za Converter tab
+\end_layout
+
+\begin_layout Standard
+- ViewOptions.h:
+ GUI za Options tab sa SOFC parametrima
+\end_layout
+
+\begin_layout Standard
+- TabView.h:
+ tab kontejner
+\end_layout
+
+\begin_layout Standard
+- WindowPlugin.h:
+ glavni prozor plugina
+\end_layout
+
+\begin_layout Standard
+Konverzija se izvodi u dva threada:
+\end_layout
+
+\begin_layout Standard
+- Thread 1:
+ računanje i pisanje modela
+\end_layout
+
+\begin_layout Standard
+- Thread 2:
+ progress indikator
+\end_layout
+
+\begin_layout Standard
+IEEE Case 9 testna mreža sadrži 9 čvorova sa ukupnom 
+\end_layout
+
+\begin_layout Standard
+opterećenjem od 315 MW.
+\end_layout
+
+\begin_layout Section
+Rezultati
+\end_layout
+
+\begin_layout Standard
+Plugin je testiran sa IEEE Case 9 testnom mrežom.
+\end_layout
+
+\begin_layout Standard
+SOFC model pokazuje stabilizaciju struje na ~25A i 
+\end_layout
+
+\begin_layout Standard
+DC snage na ~6.5W po ćeliji nakon tranzijenta.
+\end_layout
+
+\begin_layout Standard
+AC snaga nakon invertora (efikasnost 96%) iznosi ~6.2W.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename C:/Users/DT User/Desktop/sofc_current.jpg
+	lyxscale 10
+	width 5cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Zaključak
+\end_layout
+
+\begin_layout Standard
+Implementiran je funkcionalan SOFC + Invertor plugin za 
+\end_layout
+
+\begin_layout Standard
+dTwin aplikaciju.
+ Plugin učitava konfiguraciju,
+ računa 
+\end_layout
+
+\begin_layout Standard
+SOFC model i generira rezultate sa grafičkim prikazom.
+\end_layout
+
+\begin_layout Section
+Literatura
+\end_layout
+
+\begin_layout Standard
+[1] F.
+ Milano,
+ Power Systems Modelling and Scripting,
+ 
+\end_layout
+
+\begin_layout Standard
+Springer,
+ 2010.
+ 
+\end_layout
+
+\begin_layout Standard
+[2] natID SDK dokumentacija,
+ github.com/idzafic/natID
+\end_layout
+
+\begin_layout Standard
+[3] dTwin dokumentacija,
+ github.com/idzafic/dTwin
+\end_layout
+
+\end_body
+\end_document
