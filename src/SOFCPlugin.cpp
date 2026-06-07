@@ -98,46 +98,41 @@ PLUGIN_API sc::IPlugin* getPluginInterface()
 // SOFC matematicki model
 // ============================================================
 
-// Konstante
-static const double R  = 8.314;    // univerzalna plinska konstanta [J/mol/K]
-static const double F  = 96485.0;  // Faradayeva konstanta [C/mol]
-static const double E0 = 1.229;    // standardni reversibilni napon [V]
+static const double R  = 8.314;
+static const double F  = 96485.0;
+static const double E0 = 1.229;
 
-// Izracunaj Nernst napon
 static double calcNernstVoltage(const SOFCParams& p)
 {
     double lnTerm = std::log(p.pressureH2 * std::sqrt(p.pressureO2) / p.pressureH2O);
     return E0 + (R * p.temperature / (2.0 * F)) * lnTerm;
 }
 
-// Izracunaj napon SOFC celije pri datoj struji
 static double calcCellVoltage(const SOFCParams& p, double current)
 {
     double vNernst = calcNernstVoltage(p);
     double vOhm    = current * p.internalRes;
-    // Pojednostavljen aktivacijski gubitak
     double vAct    = 0.1 * std::log(1.0 + current / 0.01);
     return vNernst - vOhm - vAct;
 }
 
-// Izracunaj DC snagu SOFC
 static double calcSOFCPower(const SOFCParams& p, double current)
 {
     double vCell = calcCellVoltage(p, current);
     if (vCell < 0.0) vCell = 0.0;
-    return vCell * current; // [W] po celiji
+    return vCell * current;
 }
 
 // ============================================================
-// IEEE Test case podaci (Case 9 - ugradjeni)
+// IEEE Test case podaci (Case 9)
 // ============================================================
 struct BusData
 {
     int id;
-    double pLoad; // [MW]
-    double qLoad; // [MVAr]
-    double pGen;  // [MW]
-    double vMag;  // [p.u.]
+    double pLoad;
+    double qLoad;
+    double pGen;
+    double vMag;
 };
 
 static BusData case9Buses[] = {
@@ -155,8 +150,7 @@ static BusData case9Buses[] = {
 static int case9BusCount = 9;
 
 // ============================================================
-// Glavni createModel - konverzija u jedan thread
-// Progress update u drugi thread
+// createModel
 // ============================================================
 bool createModel(const td::String& inputFileName,
                  const td::String& outFileName,
@@ -166,7 +160,6 @@ bool createModel(const td::String& inputFileName,
 {
     mu::ScopedCLocale scopedLocale;
 
-    // Atomicni progress (thread-safe)
     std::atomic<int> progress(0);
     std::atomic<bool> done(false);
 
@@ -174,10 +167,6 @@ bool createModel(const td::String& inputFileName,
     std::thread progressThread([&progress, &done]() {
         while (!done.load())
         {
-            int p = progress.load();
-            // gui::thread::asyncExecInMainThread([p]() {
-                // progress bar update - implementirat ce se kroz callback
-            // });
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     });
@@ -185,35 +174,31 @@ bool createModel(const td::String& inputFileName,
     // Thread 1 - konverzija
     bool success = false;
     std::thread convThread([&]() {
-        
+
         progress = 10;
-        
-        // Odabir broja busova prema case-u
+
         int nBus = case9BusCount;
         BusData* buses = case9Buses;
-        
+
         if (options.caseNumber == 9)
         {
             nBus = 9;
             buses = case9Buses;
         }
-        // Case 30, 118, 300 - dodati podatke naknadno
-        
+
         progress = 30;
-        
-        // SOFC proracun za svaki bus
+
         const auto& sofc = options.sofcParams;
-        double nomCurrent = sofc.ratedPower * 1000.0 / 
-                           calcCellVoltage(sofc, 100.0); // nominalna struja
+        double nomCurrent = sofc.ratedPower * 1000.0 /
+                           calcCellVoltage(sofc, 100.0);
         if (nomCurrent <= 0.0) nomCurrent = 100.0;
-        
-        double vSOFC  = calcCellVoltage(sofc, nomCurrent);
-        double pSOFC  = calcSOFCPower(sofc, nomCurrent);
-        double pAC    = pSOFC * sofc.efficiency; // snaga nakon invertora
-        
+
+        double vSOFC = calcCellVoltage(sofc, nomCurrent);
+        double pSOFC = calcSOFCPower(sofc, nomCurrent);
+        double pAC   = pSOFC * sofc.efficiency;
+
         progress = 60;
-        
-        // Zapis direktno u fajl
+
         std::ofstream fOut;
         if (!fo::createTextFile(fOut, outFileName))
         {
@@ -222,7 +207,7 @@ bool createModel(const td::String& inputFileName,
             done = true;
             return;
         }
-        
+
         fOut << "Header:\n";
         fOut << "\tmaxIter = " << options.maxIter << "\n";
         fOut << "\treport = Solver\n";
@@ -233,19 +218,18 @@ bool createModel(const td::String& inputFileName,
         fOut << "\tdTime = " << options.dTime << "\n";
         fOut << "\tendTime = " << options.endTime << "\n";
         fOut << "end\n\n";
-        
+
         fOut << "// SOFC + Inverter Model - IEEE Case " << options.caseNumber << "\n";
         fOut << "// Nernst voltage: " << calcNernstVoltage(sofc) << " V\n";
         fOut << "// SOFC DC power: " << pSOFC << " W\n";
         fOut << "// AC power out: " << pAC << " W\n\n";
-        
-        fOut << "Model [type=DAE domain=real name=\"" << options.modelName.c_str() << "\"]:\n";
+
+        fOut << "Model [type=DAE domain=real method=RK2 name=\"" << options.modelName.c_str() << "\"]:\n";
         fOut << "Vars [out=true]:\n\t";
-        
         for (int i = 0; i < nBus; ++i)
             fOut << "v_" << buses[i].id << "; theta_" << buses[i].id << "; ";
-        fOut << "v_sofc; i_sofc; p_sofc; p_ac\n";
-        
+        fOut << "i_sofc\n";
+
         fOut << "Params:\n";
         fOut << "\tT_sofc = " << sofc.temperature << "\n";
         fOut << "\tpH2 = " << sofc.pressureH2 << "\n";
@@ -254,22 +238,68 @@ bool createModel(const td::String& inputFileName,
         fOut << "\tRint = " << sofc.internalRes << "\n";
         fOut << "\teta = " << sofc.efficiency << "\n";
         fOut << "\tE0 = " << E0 << "\n";
-        
+        fOut << "\tv_sofc = 0\t[out=true]\n";
+        fOut << "\tp_sofc = 0\t[out=true]\n";
+        fOut << "\tp_ac = 0\t[out=true]\n";
+
         for (int i = 0; i < nBus; ++i)
             fOut << "\tPL_" << buses[i].id << " = " << buses[i].pLoad << "; "
                  << "QL_" << buses[i].id << " = " << buses[i].qLoad << "; "
                  << "PG_" << buses[i].id << " = " << buses[i].pGen << "\n";
-        
-        fOut << "AEs:\n";
+
+        fOut << "ODEs:\n";
+// Napon busova - jednostavna dinamika (drže se na nominalnoj vrijednosti)
+for (int i = 0; i < nBus; ++i)
+{
+    fOut << "\tv_" << buses[i].id << "\' = 0\n";
+    fOut << "\ttheta_" << buses[i].id << "\' = 0\n";
+}
+fOut << "\ti_sofc\' = (v_sofc - i_sofc * Rint) / 0.001\n";
+
+        fOut << "PostProc:\n";
         fOut << "\tv_sofc = E0 + (" << R << " * T_sofc / " << 2.0*F << ") * ln(pH2 * sqrt(pO2) / pH2O)";
         fOut << " - i_sofc * Rint - 0.1 * ln(1 + i_sofc / 0.01)\n";
         fOut << "\tp_sofc = v_sofc * i_sofc\n";
         fOut << "\tp_ac = eta * p_sofc\n";
         fOut << "end\n";
-        
+
         fOut.close();
-        
+
+// Kreiraj vizualni model
+td::String strVisualFileName = fo::replaceFileExtension<false>(outFileName, ".vmodl");
+std::ofstream fVis;
+if (fo::createTextFile(fVis, strVisualFileName))
+{
+    fVis << "Header:\n";
+    fVis << "\tnewTab = false\n";
+    fVis << "\tdrawPlots = true\n";
+    fVis << "end\n";
+    fVis << "Model [name=\"SOFC + Inverter Results\"]:\n";
+    fVis << "Plots [backColor=auto]:\n";
+    fVis << "\tlinePlot [xLabel=\"Time [s]\" yLabel=\"Current [A]\" name=\"SOFC Current\" legend=true]:\n";
+    fVis << "\t\t@x << t\n";
+    fVis << "\t\t@y << i_sofc [colorL=black colorD=red width=2 name=\"i_sofc\"]\n";
+    fVis << "\tend\n";
+    fVis << "\tlinePlot [xLabel=\"Time [s]\" yLabel=\"Power [W]\" name=\"SOFC Power\" legend=true]:\n";
+    fVis << "\t\t@x << t\n";
+    fVis << "\t\t@y << p_sofc [colorL=darkBlue colorD=cyan width=2 name=\"p_sofc\"]\n";
+    fVis << "\t\t@y << p_ac [colorL=darkGreen colorD=green width=2 name=\"p_ac\"]\n";
+    fVis << "\tend\n";
+    fVis << "end\n";
+    fVis.close();
+}
+
+
         progress = 100;
         success = true;
         done = true;
+    });
+
+    convThread.join();
+    progressThread.join();
+
+    if (success)
+        status = "OK! Model successfully created.";
+
+    return success;
 }
