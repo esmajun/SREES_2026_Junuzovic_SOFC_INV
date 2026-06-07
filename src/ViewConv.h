@@ -7,7 +7,7 @@
 #include <gui/HorizontalLayout.h>
 #include <gui/GridLayout.h>
 #include <gui/GridComposer.h>
-#include <gui/ProgressBar.h>
+//  #include <gui/ProgressBar.h>
 #include <fo/FileOperations.h>
 #include <gui/FileDialog.h>
 #include "ViewOptions.h"
@@ -27,8 +27,8 @@ protected:
     gui::LineEdit _editStatus;
     gui::Button _btnSelectInFn;
     gui::Button _btnSelectOutFn;
-    gui::Label _lblProgress;
-    gui::ProgressBar _progressBar;
+    //  gui::Label _lblProgress;
+    //  gui::ProgressBar _progressBar;
     gui::Button _btnConvert;
     gui::HorizontalLayout _hlButtons;
     gui::GridLayout _gl;
@@ -89,14 +89,14 @@ protected:
                 return;
             }
 
-            _progressBar.setValue(0);
+            //  _progressBar.setValue(0);
             _editStatus = "Converting...";
 
             const auto& options = _pViewOptions->getOptions();
             if (!createModel(inputFileName, outFileName, _pIPlugin, options, _editStatus))
                 return;
 
-            _progressBar.setValue(100);
+            //  _progressBar.setValue(100);
             _onComplete(_pIPlugin);
 
             gui::Window* pWnd = getParentWindow();
@@ -114,12 +114,12 @@ public:
     , _lblFnIn(tr("In File Name:"))
     , _lblFnOut(tr("Out File Name:"))
     , _lblStatus(tr("Status:"))
-    , _lblProgress(tr("Progress:"))
+    //  , _lblProgress(tr("Progress:"))
     , _btnSelectInFn("…")
     , _btnSelectOutFn("…")
     , _btnConvert(tr("Convert"))
     , _hlButtons(2)
-    , _gl(6, 3)
+    , _gl(5, 3)  //promijenjeno sa _gl(6,3) na _gl(5,3)
     {
         assert(_pIPlugin);
         _editStatus.setAsReadOnly();
@@ -128,7 +128,7 @@ public:
         gc.appendRow(_lblFnIn)    << _editFnIn    << _btnSelectInFn;
         gc.appendRow(_lblFnOut)   << _editFnOut   << _btnSelectOutFn;
         gc.appendRow(_lblStatus);  gc.appendCol(_editStatus, 0);
-        gc.appendRow(_lblProgress); gc.appendCol(_progressBar, 0);
+        //  gc.appendRow(_lblProgress); gc.appendCol(_progressBar, 0);
         _hlButtons.appendSpacer() << _btnConvert;
         gc.appendRow(_hlButtons, 0);
 
