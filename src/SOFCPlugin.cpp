@@ -175,9 +175,9 @@ bool createModel(const td::String& inputFileName,
         while (!done.load())
         {
             int p = progress.load();
-            gui::thread::asyncExecInMainThread([p]() {
+            // gui::thread::asyncExecInMainThread([p]() {
                 // progress bar update - implementirat ce se kroz callback
-            });
+            // });
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     });
