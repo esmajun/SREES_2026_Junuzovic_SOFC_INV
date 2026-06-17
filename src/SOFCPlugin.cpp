@@ -8,6 +8,10 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 // ============================================================
 // Plugin klasa
@@ -23,9 +27,9 @@ public:
             _outArchives[i] = nullptr;
     }
 
-    void show(gui::Window* parentWnd, MemoryArchiveContainer& archives, 
-              td::UINT4 wndID, const sc::IPlugin::Cleaner& cleaner, 
-              const sc::IPlugin::CallBack& onComplete) override final
+    void show(gui::Window* parentWnd, MemoryArchiveContainer& archives,
+        td::UINT4 wndID, const sc::IPlugin::Cleaner& cleaner,
+        const sc::IPlugin::CallBack& onComplete) override final
     {
         for (size_t i = 0; i < size_t(ArchType::NA); ++i)
             _outArchives[i] = archives[i];
@@ -88,18 +92,17 @@ void onClosedPluginWindow()
 
 extern "C"
 {
-PLUGIN_API sc::IPlugin* getPluginInterface()
-{
-    return &s_plugin;
-}
+    PLUGIN_API sc::IPlugin* getPluginInterface()
+    {
+        return &s_plugin;
+    }
 }
 
 // ============================================================
 // SOFC matematicki model
 // ============================================================
-
-static const double R  = 8.314;
-static const double F  = 96485.0;
+static const double R = 8.314;
+static const double F = 96485.0;
 static const double E0 = 1.229;
 
 static double calcNernstVoltage(const SOFCParams& p)
@@ -111,8 +114,8 @@ static double calcNernstVoltage(const SOFCParams& p)
 static double calcCellVoltage(const SOFCParams& p, double current)
 {
     double vNernst = calcNernstVoltage(p);
-    double vOhm    = current * p.internalRes;
-    double vAct    = 0.1 * std::log(1.0 + current / 0.01);
+    double vOhm = current * p.internalRes;
+    double vAct = 0.1 * std::log(1.0 + current / 0.01);
     return vNernst - vOhm - vAct;
 }
 
@@ -124,7 +127,7 @@ static double calcSOFCPower(const SOFCParams& p, double current)
 }
 
 // ============================================================
-// IEEE Test case podaci (Case 9)
+// IEEE Test case podaci
 // ============================================================
 struct BusData
 {
@@ -133,30 +136,127 @@ struct BusData
     double qLoad;
     double pGen;
     double vMag;
+    bool hasSOFC;
 };
 
+// Case 9
 static BusData case9Buses[] = {
-    {1, 0.0,   0.0,   0.0,   1.04},
-    {2, 0.0,   0.0,   163.0, 1.025},
-    {3, 0.0,   0.0,   85.0,  1.025},
-    {4, 0.0,   0.0,   0.0,   1.0},
-    {5, 125.0, 50.0,  0.0,   1.0},
-    {6, 90.0,  30.0,  0.0,   1.0},
-    {7, 0.0,   0.0,   0.0,   1.0},
-    {8, 100.0, 35.0,  0.0,   1.0},
-    {9, 0.0,   0.0,   0.0,   1.0}
+    {1, 0.0,   0.0,   0.0,   1.04,  false},
+    {2, 0.0,   0.0,   163.0, 1.025, false},
+    {3, 0.0,   0.0,   85.0,  1.025, false},
+    {4, 0.0,   0.0,   0.0,   1.0,   false},
+    {5, 125.0, 50.0,  0.0,   1.0,   false},
+    {6, 90.0,  30.0,  0.0,   1.0,   false},
+    {7, 0.0,   0.0,   0.0,   1.0,   false},
+    {8, 100.0, 35.0,  0.0,   1.0,   false},
+    {9, 0.0,   0.0,   0.0,   1.0,   false}
 };
 
-static int case9BusCount = 9;
+// Case 30
+static BusData case30Buses[] = {
+    {1,  0.0,   0.0,   0.0,   1.06,  false},
+    {2,  21.7,  12.7,  40.0,  1.045, false},
+    {3,  2.4,   1.2,   0.0,   1.0,   false},
+    {4,  7.6,   1.6,   0.0,   1.0,   false},
+    {5,  94.2,  19.0,  0.0,   1.01,  false},
+    {6,  0.0,   0.0,   0.0,   1.0,   false},
+    {7,  22.8,  10.9,  0.0,   1.0,   false},
+    {8,  30.0,  30.0,  0.0,   1.01,  false},
+    {9,  0.0,   0.0,   0.0,   1.0,   false},
+    {10, 5.8,   2.0,   0.0,   1.0,   false},
+    {11, 0.0,   0.0,   0.0,   1.082, false},
+    {12, 11.2,  7.5,   0.0,   1.0,   false},
+    {13, 0.0,   0.0,   0.0,   1.071, false},
+    {14, 6.2,   1.6,   0.0,   1.0,   false},
+    {15, 8.2,   2.5,   0.0,   1.0,   false},
+    {16, 3.5,   1.8,   0.0,   1.0,   false},
+    {17, 9.0,   5.8,   0.0,   1.0,   false},
+    {18, 3.2,   0.9,   0.0,   1.0,   false},
+    {19, 9.5,   3.4,   0.0,   1.0,   false},
+    {20, 2.2,   0.7,   0.0,   1.0,   false},
+    {21, 17.5,  11.2,  0.0,   1.0,   false},
+    {22, 0.0,   0.0,   0.0,   1.0,   false},
+    {23, 3.2,   1.6,   0.0,   1.0,   false},
+    {24, 8.7,   6.7,   0.0,   1.0,   false},
+    {25, 0.0,   0.0,   0.0,   1.0,   false},
+    {26, 3.5,   2.3,   0.0,   1.0,   false},
+    {27, 0.0,   0.0,   0.0,   1.0,   false},
+    {28, 0.0,   0.0,   0.0,   1.0,   false},
+    {29, 2.4,   0.9,   0.0,   1.0,   false},
+    {30, 10.6,  1.9,   0.0,   1.0,   false}
+};
+
+// ============================================================
+// XML Parser - cita konfiguraciju
+// ============================================================
+struct XmlConfig
+{
+    int caseNumber;
+    std::vector<int> sofcBusIds;
+    bool valid;
+};
+
+static XmlConfig parseXmlConfig(const td::String& fileName)
+{
+    XmlConfig cfg;
+    cfg.caseNumber = 9;
+    cfg.valid = false;
+
+    std::ifstream f(fileName.c_str());
+    if (!f.is_open())
+        return cfg;
+
+    std::string line;
+    while (std::getline(f, line))
+    {
+        // Trazi <Case number="9"/>
+        auto posCase = line.find("Case");
+        if (posCase != std::string::npos)
+        {
+            auto posNum = line.find("number=\"");
+            if (posNum != std::string::npos)
+            {
+                posNum += 8; // preskoci number="
+                auto posEnd = line.find("\"", posNum);
+                if (posEnd != std::string::npos)
+                {
+                    std::string numStr = line.substr(posNum, posEnd - posNum);
+                    cfg.caseNumber = std::atoi(numStr.c_str());
+                }
+            }
+        }
+
+        // Trazi <SOFC busId="3"/>
+        auto posSOFC = line.find("SOFC");
+        if (posSOFC != std::string::npos)
+        {
+            auto posBus = line.find("busId=\"");
+            if (posBus != std::string::npos)
+            {
+                posBus += 7; // preskoci busId="
+                auto posEnd = line.find("\"", posBus);
+                if (posEnd != std::string::npos)
+                {
+                    std::string busStr = line.substr(posBus, posEnd - posBus);
+                    cfg.sofcBusIds.push_back(std::atoi(busStr.c_str()));
+                }
+            }
+        }
+    }
+
+    f.close();
+    cfg.valid = true;
+    return cfg;
+}
 
 // ============================================================
 // createModel
 // ============================================================
 bool createModel(const td::String& inputFileName,
-                 const td::String& outFileName,
-                 sc::IPlugin* pIPlugin,
-                 const Options& options,
-                 gui::LineEdit& status)
+    const td::String& outFileName,
+    sc::IPlugin* pIPlugin,
+    const Options& options,
+    gui::LineEdit& status)
 {
     mu::ScopedCLocale scopedLocale;
 
@@ -169,36 +269,81 @@ bool createModel(const td::String& inputFileName,
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-    });
+        });
+
+    bool success = false;
 
     // Thread 1 - konverzija
-    bool success = false;
     std::thread convThread([&]() {
 
         progress = 10;
 
-        int nBus = case9BusCount;
-        BusData* buses = case9Buses;
-
-        if (options.caseNumber == 9)
+        // Ucitaj XML konfiguraciju
+        XmlConfig xmlCfg = parseXmlConfig(inputFileName);
+        if (!xmlCfg.valid)
         {
-            nBus = 9;
-            buses = case9Buses;
+            status = "ERROR! Cannot parse XML config file!";
+            success = false;
+            done = true;
+            return;
         }
 
-        progress = 30;
+        // Odabir case-a — XML ima prioritet, opcija je fallback
+        int caseNum = xmlCfg.caseNumber > 0 ? xmlCfg.caseNumber : options.caseNumber;
 
+        progress = 20;
+
+        // Odabir bus podataka
+        BusData* buses = case9Buses;
+        int nBus = 9;
+
+        if (caseNum == 30)
+        {
+            buses = case30Buses;
+            nBus = 30;
+        }
+        else
+        {
+            buses = case9Buses;
+            nBus = 9;
+            caseNum = 9;
+        }
+
+        // Oznaci SOFC busove iz XML-a
+        for (int i = 0; i < nBus; ++i)
+            buses[i].hasSOFC = false;
+
+        for (int sofcBusId : xmlCfg.sofcBusIds)
+        {
+            for (int i = 0; i < nBus; ++i)
+            {
+                if (buses[i].id == sofcBusId)
+                {
+                    buses[i].hasSOFC = true;
+                    break;
+                }
+            }
+        }
+
+        // Ako nema SOFC busova u XML-u, stavi na prvi bus
+        if (xmlCfg.sofcBusIds.empty())
+            buses[0].hasSOFC = true;
+
+        progress = 40;
+
+        // SOFC proracun
         const auto& sofc = options.sofcParams;
         double nomCurrent = sofc.ratedPower * 1000.0 /
-                           calcCellVoltage(sofc, 100.0);
+            calcCellVoltage(sofc, 100.0);
         if (nomCurrent <= 0.0) nomCurrent = 100.0;
 
         double vSOFC = calcCellVoltage(sofc, nomCurrent);
         double pSOFC = calcSOFCPower(sofc, nomCurrent);
-        double pAC   = pSOFC * sofc.efficiency;
+        double pAC = pSOFC * sofc.efficiency;
 
         progress = 60;
 
+        // Zapis u fajl
         std::ofstream fOut;
         if (!fo::createTextFile(fOut, outFileName))
         {
@@ -219,12 +364,14 @@ bool createModel(const td::String& inputFileName,
         fOut << "\tendTime = " << options.endTime << "\n";
         fOut << "end\n\n";
 
-        fOut << "// SOFC + Inverter Model - IEEE Case " << options.caseNumber << "\n";
+        fOut << "// SOFC + Inverter Model - IEEE Case " << caseNum << "\n";
         fOut << "// Nernst voltage: " << calcNernstVoltage(sofc) << " V\n";
-        fOut << "// SOFC DC power: " << pSOFC << " W\n";
-        fOut << "// AC power out: " << pAC << " W\n\n";
+        fOut << "// SOFC DC power:  " << pSOFC << " W\n";
+        fOut << "// AC power out:   " << pAC << " W\n\n";
 
-        fOut << "Model [type=DAE domain=real method=RK2 name=\"" << options.modelName.c_str() << "\"]:\n";
+        fOut << "Model [type=DAE domain=real method=RK2 name=\""
+            << options.modelName.c_str() << "\"]:\n";
+
         fOut << "Vars [out=true]:\n\t";
         for (int i = 0; i < nBus; ++i)
             fOut << "v_" << buses[i].id << "; theta_" << buses[i].id << "; ";
@@ -244,56 +391,60 @@ bool createModel(const td::String& inputFileName,
 
         for (int i = 0; i < nBus; ++i)
             fOut << "\tPL_" << buses[i].id << " = " << buses[i].pLoad << "; "
-                 << "QL_" << buses[i].id << " = " << buses[i].qLoad << "; "
-                 << "PG_" << buses[i].id << " = " << buses[i].pGen << "\n";
+            << "QL_" << buses[i].id << " = " << buses[i].qLoad << "; "
+            << "PG_" << buses[i].id << " = " << buses[i].pGen << "\n";
 
         fOut << "ODEs:\n";
-// Napon busova - jednostavna dinamika (drže se na nominalnoj vrijednosti)
-for (int i = 0; i < nBus; ++i)
-{
-    fOut << "\tv_" << buses[i].id << "\' = 0\n";
-    fOut << "\ttheta_" << buses[i].id << "\' = 0\n";
-}
-fOut << "\ti_sofc\' = (v_sofc - i_sofc * Rint) / 0.001\n";
+        for (int i = 0; i < nBus; ++i)
+        {
+            fOut << "\tv_" << buses[i].id << "\' = 0\n";
+            fOut << "\ttheta_" << buses[i].id << "\' = 0\n";
+        }
+        fOut << "\ti_sofc\' = (v_sofc - i_sofc * Rint) / 0.001\n";
 
         fOut << "PostProc:\n";
-        fOut << "\tv_sofc = E0 + (" << R << " * T_sofc / " << 2.0*F << ") * ln(pH2 * sqrt(pO2) / pH2O)";
-        fOut << " - i_sofc * Rint - 0.1 * ln(1 + i_sofc / 0.01)\n";
+        fOut << "\tv_sofc = E0 + (" << R << " * T_sofc / " << 2.0 * F
+            << ") * ln(pH2 * sqrt(pO2) / pH2O)"
+            << " - i_sofc * Rint - 0.1 * ln(1 + i_sofc / 0.01)\n";
         fOut << "\tp_sofc = v_sofc * i_sofc\n";
         fOut << "\tp_ac = eta * p_sofc\n";
         fOut << "end\n";
 
         fOut.close();
 
-// Kreiraj vizualni model
-td::String strVisualFileName = fo::replaceFileExtension<false>(outFileName, ".vmodl");
-std::ofstream fVis;
-if (fo::createTextFile(fVis, strVisualFileName))
-{
-    fVis << "Header:\n";
-    fVis << "\tnewTab = false\n";
-    fVis << "\tdrawPlots = true\n";
-    fVis << "end\n";
-    fVis << "Model [name=\"SOFC + Inverter Results\"]:\n";
-    fVis << "Plots [backColor=auto]:\n";
-    fVis << "\tlinePlot [xLabel=\"Time [s]\" yLabel=\"Current [A]\" name=\"SOFC Current\" legend=true]:\n";
-    fVis << "\t\t@x << t\n";
-    fVis << "\t\t@y << i_sofc [colorL=black colorD=red width=2 name=\"i_sofc\"]\n";
-    fVis << "\tend\n";
-    fVis << "\tlinePlot [xLabel=\"Time [s]\" yLabel=\"Power [W]\" name=\"SOFC Power\" legend=true]:\n";
-    fVis << "\t\t@x << t\n";
-    fVis << "\t\t@y << p_sofc [colorL=darkBlue colorD=cyan width=2 name=\"p_sofc\"]\n";
-    fVis << "\t\t@y << p_ac [colorL=darkGreen colorD=green width=2 name=\"p_ac\"]\n";
-    fVis << "\tend\n";
-    fVis << "end\n";
-    fVis.close();
-}
+        progress = 80;
 
+        // Vizualni model
+        td::String strVisualFileName = fo::replaceFileExtension<false>(outFileName, ".vmodl");
+        std::ofstream fVis;
+        if (fo::createTextFile(fVis, strVisualFileName))
+        {
+            fVis << "Header:\n";
+            fVis << "\tnewTab = false\n";
+            fVis << "\tdrawPlots = true\n";
+            fVis << "end\n";
+            fVis << "Model [name=\"SOFC + Inverter Results - Case "
+                << caseNum << "\"]:\n";
+            fVis << "Plots [backColor=auto]:\n";
+            fVis << "\tlinePlot [xLabel=\"Time [s]\" yLabel=\"Current [A]\""
+                << " name=\"SOFC Current\" legend=true]:\n";
+            fVis << "\t\t@x << t\n";
+            fVis << "\t\t@y << i_sofc [colorL=black colorD=red width=2 name=\"i_sofc\"]\n";
+            fVis << "\tend\n";
+            fVis << "\tlinePlot [xLabel=\"Time [s]\" yLabel=\"Power [W]\""
+                << " name=\"SOFC Power\" legend=true]:\n";
+            fVis << "\t\t@x << t\n";
+            fVis << "\t\t@y << p_sofc [colorL=darkBlue colorD=cyan width=2 name=\"p_sofc\"]\n";
+            fVis << "\t\t@y << p_ac [colorL=darkGreen colorD=green width=2 name=\"p_ac\"]\n";
+            fVis << "\tend\n";
+            fVis << "end\n";
+            fVis.close();
+        }
 
         progress = 100;
         success = true;
         done = true;
-    });
+        });
 
     convThread.join();
     progressThread.join();
