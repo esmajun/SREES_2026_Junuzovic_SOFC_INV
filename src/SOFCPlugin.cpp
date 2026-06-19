@@ -865,7 +865,7 @@ bool createModel(const td::String& inputFileName,
         fOut << "Vars [out=true]:\n\t";
         for (int i = 0; i < nBus; ++i)
             fOut << "v_" << buses[i].id << "; theta_" << buses[i].id << "; ";
-        fOut << "i_sofc; T_cell\n";
+        fOut << "i_sofc; T_cell = " << sofc.temperature << "\n";
 
         fOut << "Params:\n";
         fOut << "\tT_sofc = " << sofc.temperature << "\n";
@@ -879,7 +879,7 @@ bool createModel(const td::String& inputFileName,
         fOut << "\theatLoss = " << sofc.heatLoss << "\t// W/K\n";
         fOut << "\tfuelUtil = " << sofc.fuelUtil << "\t// fuel utilization\n";
         fOut << "\tT_amb = 298.15\t// sobna temperatura [K]\n";
-        fOut << "\tT_cell = " << sofc.temperature << "\t[out=true]\t// temperatura celije [K]\n";
+      
         fOut << "\tp_heat = 0\t[out=true]\t// toplinska snaga [W]\n";
         fOut << "\tv_sofc = 0\t[out=true]\n";
         fOut << "\tp_sofc = 0\t[out=true]\n";
