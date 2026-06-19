@@ -44,6 +44,10 @@ using SOFCParams = struct _SOFCParams
     double pressureH2O;     // pritisak vodene pare [atm]
     double internalRes;     // unutarnji otpor [Ohm]
     double efficiency;      // efikasnost invertora [0-1]
+    // Novi termički parametri
+    double thermalMass;     // termalna masa [J/K]
+    double heatLoss;        // koeficijent gubitka topline [W/K]
+    double fuelUtil;        // fuel utilization faktor [0-1]
 };
 
 // Opcije konverzije

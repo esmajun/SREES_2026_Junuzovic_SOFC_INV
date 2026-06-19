@@ -865,7 +865,7 @@ bool createModel(const td::String& inputFileName,
         fOut << "Vars [out=true]:\n\t";
         for (int i = 0; i < nBus; ++i)
             fOut << "v_" << buses[i].id << "; theta_" << buses[i].id << "; ";
-        fOut << "i_sofc\n";
+        fOut << "i_sofc; T_cell\n";
 
         fOut << "Params:\n";
         fOut << "\tT_sofc = " << sofc.temperature << "\n";
@@ -875,6 +875,12 @@ bool createModel(const td::String& inputFileName,
         fOut << "\tRint = " << sofc.internalRes << "\n";
         fOut << "\teta = " << sofc.efficiency << "\n";
         fOut << "\tE0 = " << E0 << "\n";
+        fOut << "\tthermalMass = " << sofc.thermalMass << "\t// J/K\n";
+        fOut << "\theatLoss = " << sofc.heatLoss << "\t// W/K\n";
+        fOut << "\tfuelUtil = " << sofc.fuelUtil << "\t// fuel utilization\n";
+        fOut << "\tT_amb = 298.15\t// sobna temperatura [K]\n";
+        fOut << "\tT_cell = " << sofc.temperature << "\t[out=true]\t// temperatura celije [K]\n";
+        fOut << "\tp_heat = 0\t[out=true]\t// toplinska snaga [W]\n";
         fOut << "\tv_sofc = 0\t[out=true]\n";
         fOut << "\tp_sofc = 0\t[out=true]\n";
         fOut << "\tp_ac = 0\t[out=true]\n";
@@ -903,14 +909,18 @@ bool createModel(const td::String& inputFileName,
             fOut << "\tv_" << buses[i].id << "\' = 0\n";
             fOut << "\ttheta_" << buses[i].id << "\' = 0\n";
         }
+        // Dinamika struje SOFC
         fOut << "\ti_sofc\' = (v_sofc - i_sofc * Rint) / 0.001\n";
+        // Termicka dinamika - temperatura se mijenja u vremenu
+        fOut << "\tT_cell\' = (p_heat - heatLoss * (T_cell - T_amb)) / thermalMass\n";
 
         fOut << "PostProc:\n";
-        fOut << "\tv_sofc = E0 + (" << R << " * T_sofc / " << 2.0 * F
+        fOut << "\tv_sofc = E0 + (" << R << " * T_cell / " << 2.0 * F
             << ") * ln(pH2 * sqrt(pO2) / pH2O)"
             << " - i_sofc * Rint - 0.1 * ln(1 + i_sofc / 0.01)\n";
         fOut << "\tp_sofc = v_sofc * i_sofc\n";
         fOut << "\tp_ac = eta * p_sofc\n";
+        fOut << "\tp_heat = p_sofc * (1 - fuelUtil)\n";
         fOut << "end\n";
 
         fOut.close();
@@ -933,6 +943,11 @@ bool createModel(const td::String& inputFileName,
                 << " name=\"SOFC Current\" legend=true]:\n";
             fVis << "\t\t@x << t\n";
             fVis << "\t\t@y << i_sofc [colorL=black colorD=red width=2 name=\"i_sofc\"]\n";
+            fVis << "\tend\n";
+            fVis << "\tlinePlot [xLabel=\"Time [s]\" yLabel=\"Temperature [K]\""
+                << " name=\"Cell Temperature\" legend=true]:\n";
+            fVis << "\t\t@x << t\n";
+            fVis << "\t\t@y << T_cell [colorL=red colorD=orange width=2 name=\"T_cell\"]\n";
             fVis << "\tend\n";
             fVis << "\tlinePlot [xLabel=\"Time [s]\" yLabel=\"Power [W]\""
                 << " name=\"SOFC Power\" legend=true]:\n";
