@@ -615,10 +615,17 @@ static BusData case300Buses[] = {
 // ============================================================
 // XML Parser - cita konfiguraciju
 // ============================================================
+struct BusConfig
+{
+    int id;
+    std::string type; // "slack", "PQ", "PV"
+};
+
 struct XmlConfig
 {
     int caseNumber;
     std::vector<int> sofcBusIds;
+    std::vector<BusConfig> busConfigs;
     bool valid;
 };
 
@@ -642,7 +649,7 @@ static XmlConfig parseXmlConfig(const td::String& fileName)
             auto posNum = line.find("number=\"");
             if (posNum != std::string::npos)
             {
-                posNum += 8; // preskoci number="
+                posNum += 8;
                 auto posEnd = line.find("\"", posNum);
                 if (posEnd != std::string::npos)
                 {
@@ -652,18 +659,48 @@ static XmlConfig parseXmlConfig(const td::String& fileName)
             }
         }
 
+        // Trazi <Bus id="1" type="slack"/>
+        auto posBus = line.find("<Bus");
+        if (posBus != std::string::npos)
+        {
+            BusConfig bc;
+            bc.id = 0;
+            bc.type = "PQ"; // default
+
+            auto posId = line.find("id=\"");
+            if (posId != std::string::npos)
+            {
+                posId += 4;
+                auto posEnd = line.find("\"", posId);
+                if (posEnd != std::string::npos)
+                    bc.id = std::atoi(line.substr(posId, posEnd - posId).c_str());
+            }
+
+            auto posType = line.find("type=\"");
+            if (posType != std::string::npos)
+            {
+                posType += 6;
+                auto posEnd = line.find("\"", posType);
+                if (posEnd != std::string::npos)
+                    bc.type = line.substr(posType, posEnd - posType);
+            }
+
+            if (bc.id > 0)
+                cfg.busConfigs.push_back(bc);
+        }
+
         // Trazi <SOFC busId="3"/>
         auto posSOFC = line.find("SOFC");
         if (posSOFC != std::string::npos)
         {
-            auto posBus = line.find("busId=\"");
-            if (posBus != std::string::npos)
+            auto posBusId = line.find("busId=\"");
+            if (posBusId != std::string::npos)
             {
-                posBus += 7; // preskoci busId="
-                auto posEnd = line.find("\"", posBus);
+                posBusId += 7;
+                auto posEnd = line.find("\"", posBusId);
                 if (posEnd != std::string::npos)
                 {
-                    std::string busStr = line.substr(posBus, posEnd - posBus);
+                    std::string busStr = line.substr(posBusId, posEnd - posBusId);
                     cfg.sofcBusIds.push_back(std::atoi(busStr.c_str()));
                 }
             }
@@ -765,6 +802,18 @@ bool createModel(const td::String& inputFileName,
                 }
             }
         }
+        // Primijeni tipove busova iz XML-a
+        for (const auto& bc : xmlCfg.busConfigs)
+        {
+            for (int i = 0; i < nBus; ++i)
+            {
+                if (buses[i].id == bc.id)
+                {
+                    // tip se zapisuje u komentar u output fajlu
+                    break;
+                }
+            }
+        }
 
         // Ako nema SOFC busova u XML-u, stavi na prvi bus
         if (xmlCfg.sofcBusIds.empty())
@@ -831,9 +880,22 @@ bool createModel(const td::String& inputFileName,
         fOut << "\tp_ac = 0\t[out=true]\n";
 
         for (int i = 0; i < nBus; ++i)
+        {
+            // Provjeri tip iz XML konfiguracije
+            std::string busType = "PQ";
+            for (const auto& bc : xmlCfg.busConfigs)
+            {
+                if (bc.id == buses[i].id)
+                {
+                    busType = bc.type;
+                    break;
+                }
+            }
             fOut << "\tPL_" << buses[i].id << " = " << buses[i].pLoad << "; "
-            << "QL_" << buses[i].id << " = " << buses[i].qLoad << "; "
-            << "PG_" << buses[i].id << " = " << buses[i].pGen << "\n";
+                << "QL_" << buses[i].id << " = " << buses[i].qLoad << "; "
+                << "PG_" << buses[i].id << " = " << buses[i].pGen
+                << "\t// Bus type: " << busType << "\n";
+        }
 
         fOut << "ODEs:\n";
         for (int i = 0; i < nBus; ++i)
