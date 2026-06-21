@@ -1,3 +1,4 @@
+#include <dense/Matrix.h>
 #include "SOFCPlugin.h"
 #include <sc/IPlugin.h>
 #include "WindowPlugin.h"
@@ -787,6 +788,22 @@ bool createModel(const td::String& inputFileName,
             caseNum = 9;
         }
 
+        // Koristimo dense matricu iz natID-a za bus podatke
+        // Kolone: id, pLoad, qLoad, pGen, vMag
+        dense::Matrix<double> busMatrix(nBus, 5);
+        auto mat = busMatrix.getManipulator();
+
+        for (int i = 0; i < nBus; ++i)
+        {
+            mat(i, 0) = buses[i].id;
+            mat(i, 1) = buses[i].pLoad;
+            mat(i, 2) = buses[i].qLoad;
+            mat(i, 3) = buses[i].pGen;
+            mat(i, 4) = buses[i].vMag;
+        }
+
+        // Citaj iz matrice pri pisanju output fajla
+
         // Oznaci SOFC busove iz XML-a
         for (int i = 0; i < nBus; ++i)
             buses[i].hasSOFC = false;
@@ -891,15 +908,15 @@ bool createModel(const td::String& inputFileName,
             std::string busType = "PQ";
             for (const auto& bc : xmlCfg.busConfigs)
             {
-                if (bc.id == buses[i].id)
+                if (bc.id == (int)mat(i, 0))
                 {
                     busType = bc.type;
                     break;
                 }
             }
-            fOut << "\tPL_" << buses[i].id << " = " << buses[i].pLoad << "; "
-                << "QL_" << buses[i].id << " = " << buses[i].qLoad << "; "
-                << "PG_" << buses[i].id << " = " << buses[i].pGen
+            fOut << "\tPL_" << (int)mat(i, 0) << " = " << mat(i, 1) << "; "
+                << "QL_" << (int)mat(i, 0) << " = " << mat(i, 2) << "; "
+                << "PG_" << (int)mat(i, 0) << " = " << mat(i, 3)
                 << "\t// Bus type: " << busType << "\n";
         }
 
