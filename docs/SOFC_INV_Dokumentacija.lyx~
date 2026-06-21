@@ -33,9 +33,10 @@
 \float_placement class
 \float_alignment class
 \paperfontsize default
+\spacing single
 \use_hyperref false
 \papersize default
-\use_geometry false
+\use_geometry true
 \use_package amsmath 1
 \use_package amssymb 1
 \use_package cancel 1
@@ -48,6 +49,7 @@
 \use_package undertilde 1
 \cite_engine basic
 \cite_engine_type default
+\biblio_style plain
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
@@ -69,6 +71,10 @@
 \shortcut idx
 \color #008000
 \end_index
+\leftmargin 2.5cm
+\topmargin 2.5cm
+\rightmargin 2.5cm
+\bottommargin 2.5cm
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
@@ -95,16 +101,77 @@
 
 \begin_body
 
-\begin_layout Title
+\begin_layout Standard
+CTRL + R
+\end_layout
+
+\begin_layout Standard
+UNIVERZITET U SARAJEVU
+\end_layout
+
+\begin_layout Standard
+Elektrotehnički fakultet 
+\end_layout
+
+\begin_layout Standard
+Predmet:
+ Strukture i režimi rada elektroenergetskih sistema
+\end_layout
+
+\begin_layout Standard
+Mentor:
+ prof.
+ dr.
+ Izudin Džafić
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace vfill
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+
+\series bold
+\size larger
 Solid Oxide Fuel Cell i Invertor - Dinamički Konvertor
 \end_layout
 
-\begin_layout Author
+\begin_layout Standard
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+
+\size large
 Esma Junuzović
 \end_layout
 
 \begin_layout Standard
-ctrl + R za genersianje PDFa
+\begin_inset VSpace vfill
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+Sarajevo,
+ juni 2026.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -112,30 +179,25 @@ Uvod
 \end_layout
 
 \begin_layout Standard
-Solid Oxide Fuel Cell (SOFC) je elektrokemijski uređaj koji
+Solid Oxide Fuel Cell (SOFC) predstavlja naprednu tehnologiju za proizvodnju električne energije visoke efikasnosti.
+ Za razliku od konvencionalnih sistema zasnovanih na sagorijevanju goriva,
+ SOFC direktno pretvara hemijsku energiju goriva u električnu energiju putem elektrohemijskih reakcija.
+ Zbog rada na visokim temperaturama,
+ tipično između 600°C i 1000°C,
+ moguće je koristiti različite vrste goriva uz visok stepen iskorištenja energije.
 \end_layout
 
 \begin_layout Standard
-direktno pretvara hemijsku energiju goriva u električnu energiju.
+Integracija SOFC sistema sa energetskim pretvaračima predstavlja važan korak ka njihovoj primjeni u elektroenergetskim mrežama.
+ Izlazni napon gorivne ćelije zavisi od radnih uslova i opterećenja,
+ zbog čega je potrebno koristiti odgovarajuće DC/DC i DC/AC pretvarače radi stabilizacije i prilagođavanja naponskih nivoa.
 \end_layout
 
 \begin_layout Standard
-SOFC radi na visokim temperaturama (600-1000°C) i postiže
-\end_layout
-
-\begin_layout Standard
-efikasnost od 50-65%.
- U kombinaciji sa invertorom,
- SOFC sistem
-\end_layout
-
-\begin_layout Standard
-može napajati izmjeničnu mrežu.
- Ovaj projekat implementira
-\end_layout
-
-\begin_layout Standard
-dinamički model SOFC + invertor sistema za IEEE testne mreže.
+Cilj ovog rada je razvoj dinamičkog modela sistema sastavljenog od SOFC izvora i invertora,
+ te analiza njegovog ponašanja pri povezivanju na IEEE testnu mrežu.
+ Poseban fokus stavljen je na matematičko modeliranje gorivne ćelije,
+ model invertora i simulaciju odziva sistema u različitim radnim uslovima.
 \end_layout
 
 \begin_layout Section
@@ -143,7 +205,7 @@ Matematički model
 \end_layout
 
 \begin_layout Subsection
-Nernst napon
+Nernstov napon
 \end_layout
 
 \begin_layout Standard
@@ -151,33 +213,77 @@ Reversibilni napon SOFC opisan je Nernst jednadžbom:
 \end_layout
 
 \begin_layout Standard
-V_Nernst = E0 + (RT/2F) * ln(pH2 * sqrt(pO2) / pH2O)
-\end_layout
+\begin_inset Formula 
+\begin{equation}
+V_{\mathrm{Nernst}}=E_{0}+\frac{RT}{2F}\ln\left(\frac{p_{H_{2}}\sqrt{p_{O_{2}}}}{p_{H_{2}O}}\right)
+\end{equation}
 
-\begin_layout Standard
+\end_inset
+
 gdje je:
 \end_layout
 
 \begin_layout Standard
-- E0 = 1.229 V (standardni reversibilni napon)
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\nospellcheck off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\begin_inset Formula $E_{0}$
+\end_inset
+
+
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\nospellcheck default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ = 1.229 V – standardni reverzibilni napon
 \end_layout
 
 \begin_layout Standard
-- R = 8.314 J/mol/K (univerzalna plinska konstanta)
+\begin_inset Formula $R$
+\end_inset
+
+ = 8.314 J mol⁻¹ K⁻¹ – univerzalna plinska konstanta
 \end_layout
 
 \begin_layout Standard
-- T = radna temperatura [K]
+\begin_inset Formula $T$
+\end_inset
+
+ – radna temperatura [K]
 \end_layout
 
 \begin_layout Standard
-- F = 96485 C/mol (Faradayeva konstanta)
+\begin_inset Formula $F$
+\end_inset
+
+ = 96485 C mol⁻¹ – Faradayeva konstanta
 \end_layout
 
 \begin_layout Standard
-- pH2,
- pO2,
- pH2O = parcijalni pritisci [atm]
+\begin_inset Formula $p_{H_{2},}p_{O_{2},}p_{H_{2}O}$
+\end_inset
+
+ – parcijalni pritisci [atm]
 \end_layout
 
 \begin_layout Subsection
@@ -189,23 +295,112 @@ Ukupni napon ćelije:
 \end_layout
 
 \begin_layout Standard
-V_cell = V_Nernst - V_ohm - V_act
+\begin_inset Formula 
+\begin{equation}
+V_{cell}=V_{Nernst}-V_{ohm}-V_{act}
+\end{equation}
+
+\end_inset
+
+gdje su:
 \end_layout
 
 \begin_layout Standard
-gdje je:
+\begin_inset Formula $V_{cell}$
+\end_inset
+
+ - izlazni napon SOFC ćelije [V]
 \end_layout
 
 \begin_layout Standard
-- V_ohm = I * Rint (ohmski gubitak)
+\begin_inset Formula $V_{nernst}$
+\end_inset
+
+ - reverziblni (idealni) napon ćelije [V]
 \end_layout
 
 \begin_layout Standard
-- V_act = 0.1 * ln(1 + I/0.01) (aktivacijski gubitak)
+\begin_inset Formula $V_{ohm}$
+\end_inset
+
+ - omski gubitak napona [V]
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $V_{act}$
+\end_inset
+
+ - aktivacijski gubitak napona [V]
+\end_layout
+
+\begin_layout Standard
+Omski gubitak napona:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+V_{ohm}=I\,R_{int}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+gdje su:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $I$
+\end_inset
+
+ - struja ćelije [A]
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $R_{int}$
+\end_inset
+
+ - unutrašnji otpor ćelije [Ω]
+\end_layout
+
+\begin_layout Standard
+Aktivacijski gubitak napona:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+V_{act}=0.1\ln\left(1+\frac{I}{0.01}\right)
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+gdje su:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $V_{act}$
+\end_inset
+
+ - aktivacijski gubitak napona [V]
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $I$
+\end_inset
+
+ - izlazna struja ćelije [A]
 \end_layout
 
 \begin_layout Subsection
-Invertor
+Model invertora
 \end_layout
 
 \begin_layout Standard
@@ -213,11 +408,39 @@ AC snaga nakon invertora:
 \end_layout
 
 \begin_layout Standard
-P_ac = eta * P_sofc
+\begin_inset Formula 
+\begin{equation}
+P_{ac}=\eta P_{SOFC}
+\end{equation}
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
-gdje je eta efikasnost invertora (tipično 0.96).
+gdje su:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $P_{ac}$
+\end_inset
+
+ - izlazna AC snaga invertora [W]
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $P_{SOFC}$
+\end_inset
+
+ - izlazna snaga SOFC sistem [W]
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $η$
+\end_inset
+
+ - efikasnost invertora (tipično 0.96)
 \end_layout
 
 \begin_layout Section
@@ -225,11 +448,7 @@ Implementacija
 \end_layout
 
 \begin_layout Standard
-Plugin je implementiran u C++ kao DLL biblioteka koja se 
-\end_layout
-
-\begin_layout Standard
-učitava u dTwin aplikaciju.
+Plugin je implementiran u C++ kao DLL biblioteka koja se učitava u dTwin aplikaciju.
  Sastoji se od:
 \end_layout
 
@@ -273,11 +492,7 @@ Konverzija se izvodi u dva threada:
 \end_layout
 
 \begin_layout Standard
-IEEE Case 9 testna mreža sadrži 9 čvorova sa ukupnom 
-\end_layout
-
-\begin_layout Standard
-opterećenjem od 315 MW.
+IEEE Case 9 testna mreža sadrži 9 čvorova sa ukupnom opterećenjem od 315 MW.
 \end_layout
 
 \begin_layout Section
@@ -286,24 +501,40 @@ Rezultati
 
 \begin_layout Standard
 Plugin je testiran sa IEEE Case 9 testnom mrežom.
+ SOFC model pokazuje stabilizaciju struje na ~25A i DC snage na ~6.5W po ćeliji nakon tranzijenta.
+ AC snaga nakon invertora (efikasnost 96%) iznosi ~6.2W.
 \end_layout
 
 \begin_layout Standard
-SOFC model pokazuje stabilizaciju struje na ~25A i 
-\end_layout
+\align center
+\begin_inset Float figure
+placement H
+alignment center
+wide false
+sideways false
+status open
 
-\begin_layout Standard
-DC snage na ~6.5W po ćeliji nakon tranzijenta.
-\end_layout
-
-\begin_layout Standard
-AC snaga nakon invertora (efikasnost 96%) iznosi ~6.2W.
-\end_layout
-
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Graphics
-	filename C:/Users/DT User/Desktop/sofc_current.jpg
-	lyxscale 50
+	filename C:/Users/DT User/Desktop/dTwin rezultati/Converter_tab.png
+	width 10cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+SOFC Plugin - Converter tab
+\end_layout
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -311,9 +542,147 @@ AC snaga nakon invertora (efikasnost 96%) iznosi ~6.2W.
 \end_layout
 
 \begin_layout Standard
+\align center
+\begin_inset Float figure
+placement H
+alignment center
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
 \begin_inset Graphics
-	filename C:/Users/DT User/Desktop/sofc_power.jpg
-	lyxscale 50
+	filename C:/Users/DT User/Desktop/dTwin rezultati/Options_tab.png
+	width 10cm
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+SOFC Plugin - Options tab
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+placement H
+alignment center
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename C:/Users/DT User/Desktop/dTwin rezultati/SOFC_current.png
+	width 10cm
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+SOFC struja u ovisnosti od vremena
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+placement H
+alignment center
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename C:/Users/DT User/Desktop/dTwin rezultati/Cell_temperature.png
+	width 10cm
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Temperatura ćelije u ovisnosti od vremena
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+placement H
+alignment center
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename C:/Users/DT User/Desktop/dTwin rezultati/SOFC_power.png
+	width 10cm
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+SOFC snaga u vremenu
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
 
 \end_inset
 
@@ -325,17 +694,14 @@ Zaključak
 \end_layout
 
 \begin_layout Standard
-Implementiran je funkcionalan SOFC + Invertor plugin za 
-\end_layout
-
-\begin_layout Standard
-dTwin aplikaciju.
+U radu je razvijen matematički model SOFC sistema povezanog sa invertorom.
+ Analizirani su osnovni elektrohemijski procesi,
+ model napona gorivne ćelije te uticaj gubitaka na izlazne karakteristike sistema.
+ Implementirani model omogućava simulaciju dinamičkog ponašanja sistema i predstavlja osnovu za dalja istraživanja upravljanja i integracije SOFC tehnologije u elektroenergetske mreže.
+ također,
+ implementiran je funkcionalan SOFC + Invertor plugin za dTwin aplikaciju.
  Plugin učitava konfiguraciju,
- računa 
-\end_layout
-
-\begin_layout Standard
-SOFC model i generira rezultate sa grafičkim prikazom.
+ računa SOFC model i generira rezultate sa grafičkim prikazom.
 \end_layout
 
 \begin_layout Section
